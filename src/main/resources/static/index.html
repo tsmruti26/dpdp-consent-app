@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DPDP Consent Portal</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; padding: 40px; margin: 0; }
+    .box { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    h2 { color: #333; margin-bottom: 20px; text-align: center; }
+    label { font-weight: 600; color: #555; display: block; margin-top: 10px; }
+    input, select, textarea { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    textarea { height: 80px; resize: vertical; }
+    button { width: 100%; padding: 12px; background: #1976d2; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+    button:hover { background: #1259a7; }
+    #msg { margin-top: 15px; font-weight: bold; text-align: center; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>DPDP Consent Form</h2>
+  <form id="consentForm" onsubmit="submitConsent(event)">
+    <label for="username">User Identity / Name</label>
+    <input id="username" type="text" placeholder="Enter Full Name" required>
+
+    <label for="consent_for">Consent For</label>
+    <select id="consent_for">
+      <option value="Self">Self</option>
+      <option value="Child">Child</option>
+      <option value="Dependant">Dependant</option>
+    </select>
+
+    <label for="dependant_details">Relationship Status Details</label>
+    <select id="dependant_details">
+      <option value="None">Not Applicable</option>
+      <option value="Parent">Parent</option>
+      <option value="Sibling">Sibling</option>
+      <option value="Spouse">Spouse</option>
+      <option value="Guardian">Guardian</option>
+    </select>
+
+    <label for="purpose">Processing Purpose Notice</label>
+    <textarea id="purpose" placeholder="Describe the purpose explicitly under DPDP Act requirements..." required></textarea>
+
+    <label for="decision">User Intention</label>
+    <select id="decision">
+      <option value="Approve">Approve</option>
+      <option value="Deny">Deny</option>
+    </select>
+
+    <button type="submit">Submit Legal Consent</button>
+  </form>
+
+  <div id="msg"></div>
+</div>
+
+<script>
+async function submitConsent(event) {
+  // CRITICAL FIX: Stop the browser from reloading the page instantly
+  event.preventDefault();
+
+  const msgDiv = document.getElementById("msg");
+  msgDiv.className = "";
+  msgDiv.innerText = "Processing Backend Request...";
+
+  const data = {
+    username: document.getElementById("username").value,
+    consentFor: document.getElementById("consent_for").value,
+    taylorDetails: document.getElementById("dependant_details").value,
+    purpose: document.getElementById("purpose").value,
+    decision: document.getElementById("decision").value
+  };
+
+  // Log payload directly to console to verify the button click is working
+  console.log("Sending Data Payload to Spring Boot:", data);
+
+  try {
+    const res = await fetch("/api/create_consent", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(data)
+    });
+
+    console.log("Server Response Object Received:", res);
+
+    if(res.ok){
+      const responseData = await res.json();
+      console.log("Successfully Persisted Entry:", responseData);
+      
+      msgDiv.className = "success";
+      msgDiv.innerText = "Consent verified and filed successfully under DPDP!";
+      document.getElementById("username").value = "";
+      document.getElementById("purpose").value = "";
+    } else {
+      throw new Error("Server returned a non-OK status code");
+    }
+  } catch (err) {
+    console.error("Data Transmission Crash Log:", err);
+    msgDiv.className = "error";
+    msgDiv.innerText = "Error recording application consent infrastructure.";
+  }
+}
+</script>
+</body>
+</html>

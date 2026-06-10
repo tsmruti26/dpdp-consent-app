@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin DPDP Dashboard System</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef2f7; padding: 30px; margin: 0; }
+    .container { max-width: 1200px; margin: auto; }
+    .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    h2 { margin: 0; color: #222; }
+    .logout-btn { padding: 10px 20px; background: #c62828; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; }
+    .logout-btn:hover { background: #b71c1c; }
+    
+    .cards { display: flex; gap: 15px; margin-bottom: 30px; }
+    .card { flex: 1; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; }
+    .card h3 { margin: 0 0 10px 0; color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card .num { font-size: 32px; font-weight: bold; color: #1976d2; }
+    
+    .section-title { color: #444; margin-top: 25px; margin-bottom: 15px; font-size: 18px; border-left: 4px solid #1976d2; padding-left: 10px; }
+    table { width: 100%; background: white; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 35px; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+    th { background-color: #f8f9fa; color: #333; font-weight: 600; }
+    
+    .btn-approve { padding: 6px 14px; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .btn-reject { padding: 6px 14px; background: #c62828; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .btn-approve:hover { background: #1b5e20; }
+    .btn-reject:hover { background: #b71c1c; }
+    
+    .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-block; }
+    .badge-Pending { background: #fff3cd; color: #856404; }
+    .badge-Approved { background: #d4edda; color: #155724; }
+    .badge-Rejected { background: #f8d7da; color: #721c24; }
+    .badge-Denied { background: #f8d7da; color: #721c24; }
+    
+    .token-txt { font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #555; background: #f1f3f5; padding: 2px 6px; border-radius: 4px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
+    .time-txt { color: #666; font-size: 12px; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: white; padding: 30px; border-radius: 10px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+    .modal-box h3 { margin: 0 0 15px 0; color: #333; }
+    .modal-box p { margin: 10px 0; color: #666; font-size: 13px; word-break: break-all; }
+    .modal-close { float: right; cursor: pointer; font-size: 24px; color: #999; }
+    .modal-close:hover { color: #333; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header-area">
+    <h2>DPDP Compliance Infrastructure Master Panel</h2>
+    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+  </div>
+
+  <div class="cards">
+    <div class="card"><h3>Total Registry Items</h3><div class="num" id="total">0</div></div>
+    <div class="card"><h3>Approved Log Items</h3><div class="num" id="approved">0</div></div>
+    <div class="card"><h3>Rejected Log Items</h3><div class="num" id="rejected">0</div></div>
+    <div class="card"><h3>Awaiting Audit Verification</h3><div class="num" id="pending">0</div></div>
+  </div>
+
+  <div class="section-title">Active Database Consent Registry</div>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Principal Target</th>
+        <th>Relationship Metrics</th>
+        <th>Explicit Intent Scope</th>
+        <th>Processing Intention</th>
+        <th>DPDP State Token Tracking</th>
+        <th>Timeline</th>
+        <th>Current State</th>
+        <th>Action Protocol Management</th>
+      </tr>
+    </thead>
+    <tbody id="rows">
+      </tbody>
+  </table>
+</div>
+
+<!-- Token Modal -->
+<div class="modal-overlay" id="tokenModal">
+  <div class="modal-box">
+    <span class="modal-close" onclick="closeTokenModal()">&times;</span>
+    <h3>State Token Details</h3>
+    <p><strong>Full Token:</strong></p>
+    <p id="fullToken" style="background: #f1f3f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;"></p>
+  </div>
+</div>
+
+<script>
+// Check if admin is logged in
+if (!localStorage.getItem("dpdp_admin_session")) {
+  window.location.href = "http://localhost:8080/login.html";
+}
+
+async function loadDashboard() {
+  try {
+    const res = await fetch("/api/dashboard");
+    const d = await res.json();
+    document.getElementById("total").innerText = d.total;
+    document.getElementById("approved").innerText = d.approved;
+    document.getElementById("rejected").innerText = d.rejected;
+    document.getElementById("pending").innerText = d.pending;
+  } catch (err) {
+    console.error("Critical error mapping administrative parameters dashboard updates:", err);
+  }
+}
+
+async function loadConsents() {
+  try {
+    const res = await fetch("/api/get_consents");
+    const data = await res.json();
+    let html = "";
+
+    data.forEach(c => {
+      const formattedDate = c.consentDate ? new Date(c.consentDate).toLocaleString() : "N/A";
+      const tokenDisplay = c.stateToken ? c.stateToken.substring(0, 20) + "..." : "Generating...";
+      
+      html += `
+        <tr>
+          <td><b>#${c.id}</b></td>
+          <td><span style="font-weight:600; color:#222">${c.username}</span></td>
+          <td><small style="color:#555">${c.consentFor}</small><br><small style="color:#777">Detail: ${c.taylorDetails || 'None'}</small></td>
+          <td><span style="font-size:13px; color:#333">${c.purpose}</span></td>
+          <td><span style="font-weight: 500">${c.decision}</span></td>
+          <td><span class="token-txt" onclick="showTokenModal('${c.stateToken}')" style="cursor: pointer;">${tokenDisplay}</span></td>
+          <td><span class="time-txt">${formattedDate}</span></td>
+          <td><span class="badge badge-${c.approvalStatus}">${c.approvalStatus}</span></td>
+          <td>
+            ${c.approvalStatus === 'Pending' ? `
+              <button class="btn-approve" onclick="updateStatus(${c.id}, 'Approved')">Approve</button>
+              <button style="margin-top: 4px;" class="btn-reject" onclick="updateStatus(${c.id}, 'Rejected')">Reject</button>
+            ` : `<small style="color:#888; font-style:italic">Record Finalized</small>`}
+          </td>
+        </tr>
+      `;
+    });
+    document.getElementById("rows").innerHTML = html;
+  } catch (err) {
+    console.error("Critical error capturing data pipeline records elements mapping:", err);
+  }
+}
+
+async function updateStatus(id, status) {
+  try {
+    const response = await fetch("/api/update_status", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({id, status})
+    });
+    if(response.ok) {
+      loadConsents();
+      loadDashboard();
+    }
+  } catch (err) {
+    console.error("Failed executing workflow execution modification protocol context:", err);
+  }
+}
+
+function showTokenModal(token) {
+  document.getElementById("fullToken").innerText = token;
+  document.getElementById("tokenModal").classList.add("active");
+}
+
+function closeTokenModal() {
+  document.getElementById("tokenModal").classList.remove("active");
+}
+
+function handleLogout() {
+  localStorage.removeItem("dpdp_admin_session");
+  window.location.href = "http://localhost:8080/login.html";
+}
+
+// Initial structural bootstrap execution loops
+loadDashboard();
+loadConsents();
+</script>
+</body>
+</html>
