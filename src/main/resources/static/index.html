@@ -1,107 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>DPDP Consent Portal</title>
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; padding: 40px; margin: 0; }
-    .box { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    h2 { color: #333; margin-bottom: 20px; text-align: center; }
-    label { font-weight: 600; color: #555; display: block; margin-top: 10px; }
-    input, select, textarea { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-    textarea { height: 80px; resize: vertical; }
-    button { width: 100%; padding: 12px; background: #1976d2; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
-    button:hover { background: #1259a7; }
-    #msg { margin-top: 15px; font-weight: bold; text-align: center; }
-    .success { color: green; }
-    .error { color: red; }
-  </style>
+<meta charset="UTF-8">
+<title>DPDP Consent Portal</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
+  padding: 40px;
+  margin: 0;
+}
+
+.box {
+  max-width: 500px;
+  margin: auto;
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+}
+
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1259a7;
+}
+
+#otpBox {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px dashed #aaa;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+#consentBox {
+  display: none;
+}
+
+.success { color: green; }
+.error { color: red; }
+
+#msg {
+  text-align: center;
+  margin-top: 15px;
+  font-weight: bold;
+}
+</style>
 </head>
+
 <body>
 
 <div class="box">
-  <h2>DPDP Consent Form</h2>
-  <form id="consentForm" onsubmit="submitConsent(event)">
-    <label for="username">User Identity / Name</label>
-    <input id="username" type="text" placeholder="Enter Full Name" required>
+<h2>DPDP Consent Portal</h2>
 
-    <label for="consent_for">Consent For</label>
-    <select id="consent_for">
-      <option value="Self">Self</option>
-      <option value="Child">Child</option>
-      <option value="Dependant">Dependant</option>
-    </select>
+<!-- ================= OTP SECTION ================= -->
+<div id="authBox">
 
-    <label for="dependant_details">Relationship Status Details</label>
-    <select id="dependant_details">
-      <option value="None">Not Applicable</option>
-      <option value="Parent">Parent</option>
-      <option value="Sibling">Sibling</option>
-      <option value="Spouse">Spouse</option>
-      <option value="Guardian">Guardian</option>
-    </select>
+  <label>Aadhaar Number</label>
+  <input id="aadhaar" type="text" maxlength="12" placeholder="Enter 12-digit Aadhaar">
 
-    <label for="purpose">Processing Purpose Notice</label>
-    <textarea id="purpose" placeholder="Describe the purpose explicitly under DPDP Act requirements..." required></textarea>
+  <button type="button" onclick="generateOtp()">Send OTP</button>
 
-    <label for="decision">User Intention</label>
-    <select id="decision">
-      <option value="Approve">Approve</option>
-      <option value="Deny">Deny</option>
-    </select>
+  <div id="otpBox">
+    <p id="otpText"></p>
 
-    <button type="submit">Submit Legal Consent</button>
-  </form>
+    <input id="otp" type="text" maxlength="6" placeholder="Enter OTP">
 
-  <div id="msg"></div>
+    <button type="button" onclick="verifyOtp()">Verify OTP</button>
+  </div>
+
+</div>
+
+<!-- ================= CONSENT SECTION ================= -->
+<form id="consentForm" onsubmit="submitConsent(event)">
+<div id="consentBox">
+
+  <label>User Identity</label>
+  <input id="username" readonly>
+
+  <label>Consent For</label>
+  <select id="consent_for">
+    <option>Self</option>
+    <option>Child</option>
+    <option>Dependant</option>
+  </select>
+
+  <label>Relationship</label>
+  <select id="dependant_details">
+    <option>None</option>
+    <option>Parent</option>
+    <option>Sibling</option>
+    <option>Spouse</option>
+    <option>Guardian</option>
+  </select>
+
+  <label>Purpose</label>
+  <textarea id="purpose" required></textarea>
+
+  <label>Decision</label>
+  <select id="decision">
+    <option>Approve</option>
+    <option>Deny</option>
+  </select>
+
+  <button type="submit">Submit Consent</button>
+
+</div>
+</form>
+
+<div id="msg"></div>
 </div>
 
 <script>
-async function submitConsent(event) {
-  // CRITICAL FIX: Stop the browser from reloading the page instantly
-  event.preventDefault();
 
-  const msgDiv = document.getElementById("msg");
-  msgDiv.className = "";
-  msgDiv.innerText = "Processing Backend Request...";
+let currentAadhaar = "";
+
+/* ================= OTP GENERATE ================= */
+async function generateOtp() {
+
+  const aadhaar = document.getElementById("aadhaar").value;
+
+  if (!/^\d{12}$/.test(aadhaar)) {
+    alert("Enter valid 12-digit Aadhaar");
+    return;
+  }
+
+  const res = await fetch("/api/generate-otp?aadhaar=" + aadhaar, {
+    method: "POST"
+  });
+
+  const data = await res.json();
+
+  currentAadhaar = aadhaar;
+
+  document.getElementById("otpBox").style.display = "block";
+  document.getElementById("otpText").innerHTML =
+    "Demo OTP: <b>" + data.otp + "</b>";
+}
+
+/* ================= OTP VERIFY ================= */
+async function verifyOtp() {
+
+  const otp = document.getElementById("otp").value;
+
+  const res = await fetch(
+    "/api/verify-otp?aadhaar=" + currentAadhaar + "&otp=" + otp,
+    { method: "POST" }
+  );
+
+  const data = await res.json();
+
+  if (data.status === "SUCCESS") {
+
+    sessionStorage.setItem("aadhaar", currentAadhaar);
+
+    document.getElementById("authBox").style.display = "none";
+    document.getElementById("consentBox").style.display = "block";
+
+    document.getElementById("username").value =
+      "Verified Aadhaar (XXXX" + currentAadhaar.slice(-4) + ")";
+
+    document.getElementById("msg").innerHTML =
+      "<span class='success'>Aadhaar Verified Successfully</span>";
+
+  } else {
+    alert(data.message);
+  }
+}
+
+/* ================= CONSENT SUBMIT ================= */
+async function submitConsent(event) {
+
+  event.preventDefault();
 
   const data = {
     username: document.getElementById("username").value,
+    aadhaar: sessionStorage.getItem("aadhaar"),
     consentFor: document.getElementById("consent_for").value,
-    taylorDetails: document.getElementById("dependant_details").value,
+    dependantDetails: document.getElementById("dependant_details").value,
     purpose: document.getElementById("purpose").value,
     decision: document.getElementById("decision").value
   };
 
-  // Log payload directly to console to verify the button click is working
-  console.log("Sending Data Payload to Spring Boot:", data);
-
   try {
+
     const res = await fetch("/api/create_consent", {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify(data)
     });
 
-    console.log("Server Response Object Received:", res);
+    if (res.ok) {
+      document.getElementById("msg").innerHTML =
+        "<span class='success'>Consent saved successfully</span>";
 
-    if(res.ok){
-      const responseData = await res.json();
-      console.log("Successfully Persisted Entry:", responseData);
-      
-      msgDiv.className = "success";
-      msgDiv.innerText = "Consent verified and filed successfully under DPDP!";
-      document.getElementById("username").value = "";
       document.getElementById("purpose").value = "";
-    } else {
-      throw new Error("Server returned a non-OK status code");
     }
-  } catch (err) {
-    console.error("Data Transmission Crash Log:", err);
-    msgDiv.className = "error";
-    msgDiv.innerText = "Error recording application consent infrastructure.";
+
+  } catch (e) {
+    document.getElementById("msg").innerHTML =
+      "<span class='error'>Error saving consent</span>";
   }
 }
+
 </script>
+
 </body>
 </html>
