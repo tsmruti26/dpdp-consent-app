@@ -18,7 +18,7 @@ public class ConsentRequest {
     private String consentFor;
 
     @Column(name = "dependant_details")
-    private String taylorDetails;
+    private String dependantDetails;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String purpose;
@@ -35,33 +35,87 @@ public class ConsentRequest {
     @Column(name = "consent_date", nullable = false)
     private LocalDateTime consentDate;
 
-    public ConsentRequest() {}
+    public ConsentRequest() {
+    }
 
     @PrePersist
     protected void onCreate() {
         this.consentDate = LocalDateTime.now();
+
         if (this.approvalStatus == null) {
             this.approvalStatus = "Pending";
         }
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getConsentFor() { return consentFor; }
-    public void setConsentFor(String consentFor) { this.consentFor = consentFor; }
-    public String getTaylorDetails() { return taylorDetails; }
-    public void setTaylorDetails(String taylorDetails) { this.taylorDetails = taylorDetails; }
-    public String getPurpose() { return purpose; }
-    public void setPurpose(String purpose) { this.purpose = purpose; }
-    public String getDecision() { return decision; }
-    public void setDecision(String decision) { this.decision = decision; }
-    public String getApprovalStatus() { return approvalStatus; }
-    public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
-    public String getStateToken() { return stateToken; }
-    public void setStateToken(String stateToken) { this.stateToken = stateToken; }
-    public LocalDateTime getConsentDate() { return consentDate; }
-    public void setConsentDate(LocalDateTime consentDate) { this.consentDate = consentDate; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getConsentFor() {
+        return consentFor;
+    }
+
+    public void setConsentFor(String consentFor) {
+        this.consentFor = consentFor;
+    }
+
+    public String getDependantDetails() {
+        return dependantDetails;
+    }
+
+    public void setDependantDetails(String dependantDetails) {
+        this.dependantDetails = dependantDetails;
+    }
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
+    }
+
+    public String getDecision() {
+        return decision;
+    }
+
+    public void setDecision(String decision) {
+        this.decision = decision;
+    }
+
+    public String getApprovalStatus() {
+        return approvalStatus;
+    }
+
+    public void setApprovalStatus(String approvalStatus) {
+        this.approvalStatus = approvalStatus;
+    }
+
+    public String getStateToken() {
+        return stateToken;
+    }
+
+    public void setStateToken(String stateToken) {
+        this.stateToken = stateToken;
+    }
+
+    public LocalDateTime getConsentDate() {
+        return consentDate;
+    }
+
+    public void setConsentDate(LocalDateTime consentDate) {
+        this.consentDate = consentDate;
+    }
 }
